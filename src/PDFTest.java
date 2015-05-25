@@ -17,14 +17,12 @@ import org.xml.sax.SAXException;
 
 /**
  * Class to utilize the PDFBox api to convert PDFs and HTMLs to texts
- * Functionalities change from 1.0:
- * - Can read PDF files recursively from directories
- * - Can avoid files with other extensions
- * - Output files with the same name as PDFs
- * - Mechanism to handle files with same names.pdf
- * - OOP features included
+ * CHANGE:
+ * - Tika added for html parsing
+ * - Both pdf and htmls can be converted
+ * - Can avoid files that are neither html nor pdfs
  * @author Rushdi Shams, Sustainalytics
- * @version 2.0 April 06 2015
+ * @version 3.0 May 25 2015
  *
  */
 
