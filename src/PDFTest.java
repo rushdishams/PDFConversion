@@ -24,7 +24,7 @@ import org.xml.sax.SAXException;
  * - Mechanism to handle files with same names.pdf
  * - OOP features included
  * @author Rushdi Shams, Sustainalytics
- * @version 3.0 May 25 2015
+ * @version 2.0 April 06 2015
  *
  */
 
@@ -64,7 +64,11 @@ public class PDFTest {
 
 		//getting the content of the document
 		File convertedHTML = new File(FilenameUtils.removeExtension(file.getPath()) + ".txt");
-
+		/*What hapens if the output file already exists? --->*/
+		if(convertedHTML.exists()){
+			FileUtils.forceDelete(convertedHTML);
+			convertedHTML = new File(FilenameUtils.removeExtension(file.getPath()) + ".txt");
+		}// <--- handling file duplication ends
 		try {
 			FileUtils.write(convertedHTML, handler.toString().trim(), null);
 		} catch (IOException e) {
@@ -97,11 +101,15 @@ public class PDFTest {
 						convertHTML(file);
 						continue; //we are going back to the beginning of for loop because the rest of the code deals with pdfs
 					} // <--- html handling ends
+					
+					if(fileExtension.equalsIgnoreCase("txt")){
+						continue;
+					}
 
 					File output = new File(FilenameUtils.removeExtension(file.getPath()) + ".txt"); //converted pdf
 					/*What hapens if the output file already exists? --->*/
 					if(output.exists()){
-						FileUtils.forceDelete(file);
+						FileUtils.forceDelete(output);
 						output = new File(FilenameUtils.removeExtension(file.getPath()) + ".txt"); //output file
 					}// <--- handling file duplication ends
 
