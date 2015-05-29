@@ -18,11 +18,9 @@ import org.xml.sax.SAXException;
 /**
  * Class to utilize the PDFBox api to convert PDFs and HTMLs to texts
  * CHANGE:
- * - Tika added for html parsing
- * - Both pdf and htmls can be converted
- * - Can avoid files that are neither html nor pdfs
+ * - Bug fix for stopping execution for corrupted pdfs
  * @author Rushdi Shams, Sustainalytics
- * @version 3.0 May 25 2015
+ * @version 3.1 May 25 2015
  *
  */
 
@@ -99,7 +97,7 @@ public class PDFTest {
 						convertHTML(file);
 						continue; //we are going back to the beginning of for loop because the rest of the code deals with pdfs
 					} // <--- html handling ends
-					
+
 					if(fileExtension.equalsIgnoreCase("txt")){
 						continue;
 					}
@@ -111,70 +109,78 @@ public class PDFTest {
 						output = new File(FilenameUtils.removeExtension(file.getPath()) + ".txt"); //output file
 					}// <--- handling file duplication ends
 
+					InputStream fileStream = new FileInputStream(file);
+
+					boolean error = false;
 					//Load the PDF --->
 					try {
-						pd = PDDocument.load(file);
+						pd = PDDocument.load(fileStream, true);
+						fileStream.close();
 					} catch (IOException e) {
-						System.out.println("Error loading file " + file.getAbsolutePath());
+						System.out.println("Error loading PDF file: " + file.getAbsolutePath());
+						error = true;
 					} //<--- pdf is loaded
 
-					//work around to decrypt an encrypted pdf -->
-					if (pd.isEncrypted()){
-						System.out.println(" is encrypted. Trying to decrypt");
-						try {
-							pd.decrypt("");
-						} catch (CryptographyException e) {
-							System.out.println(file.getAbsolutePath());
-							e.printStackTrace();
-						} catch (IOException e) {
-							System.out.println(file.getAbsolutePath());
-							e.printStackTrace();
-						}
-						pd.setAllSecurityToBeRemoved(true);
-					}//<--work around to decrypt an encrypted pdf ends here
+					//In case we could read the PDF file, the file is not corrupt --->
+					if(!error){
+						//work around to decrypt an encrypted pdf -->
+						error = false;
+						System.out.println(file.getAbsolutePath());
+						if (pd.isEncrypted()){
+							System.out.println(file.getAbsolutePath() + " is encrypted. Trying to decrypt...");
+							try {
+								pd.decrypt("");
+								pd.setAllSecurityToBeRemoved(true);
+							} catch (CryptographyException e) {
+								error = true;
+								System.out.println("Error decrypting file: " + file.getAbsolutePath());
+							}
 
-					/*Paragraph mark-up --->*/
-					PDFTextStripper stripper = null;
-					try {
-						stripper = new PDFTextStripper();
-						stripper.setParagraphStart("<paragraph>" + "\n"); //detecting a paragraph start
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
+						}//<--work around to decrypt an encrypted pdf ends here
 
-					//preparing write buffer and writing the converted pdfs --->
-					try {
-						wr = new BufferedWriter(new FileWriter(output));
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
+						if(!error){
+							/*Paragraph mark-up --->*/
+							PDFTextStripper stripper = null;
+							try {
+								stripper = new PDFTextStripper();
+								stripper.setParagraphStart("<paragraph>" + "\n"); //detecting a paragraph start
+							} catch (IOException e) {
+								System.out.println("Error stripping file: " + file.getAbsolutePath());
+							}
 
-					try {
-						stripper.writeText(pd, wr); 
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					// <--- file write ends
-					/*Let's close the buffers --->*/
-					if (pd != null) {
-						try {
-							pd.close();
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-					}
+							//preparing write buffer and writing the converted pdfs --->
+							try {
+								wr = new BufferedWriter(new FileWriter(output));
+							} catch (IOException e) {
+								System.out.println("Error creating write buffer");
+							}
 
-					try {
-						wr.close();
-					} catch (IOException e) {
-						e.printStackTrace();
+							try {
+								stripper.writeText(pd, wr); 
+							} catch (IOException e) {
+								System.out.println("Error writing PDF file with stripper");
+							}
+							// <--- file write ends
+							/*Let's close the buffers --->*/
+							try {
+								pd.close();
+							} catch (IOException e) {
+								System.out.println("Error closing PDF Document object");
+							}
+
+							try {
+								wr.close();
+							} catch (IOException e) {
+								System.out.println("Error closing writer");
+							}
+							//<--- buffer closes
+						}// <--- the file was not corrupt or something
 					}
-					//<--- buffer closes
 				}//<--- we have dealt with files up to this point
 			}//<--Let's move towards the next file/directory
-			
+
 		}//<--- the directory was not empty
-		
+
 	}//end method of converting pdf to text
 
 	/**
