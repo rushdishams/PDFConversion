@@ -143,7 +143,11 @@ public class PDFTest {
 							PDFTextStripper stripper = null;
 							try {
 								stripper = new PDFTextStripper();
-								stripper.setParagraphStart("<paragraph>" + "\n"); //detecting a paragraph start
+								stripper.setParagraphStart("<p>"); //detecting a paragraph start
+								stripper.setParagraphEnd("</p>");
+								stripper.setPageStart("<page>");
+								stripper.setPageEnd("</page>");
+								
 							} catch (IOException e) {
 								System.out.println("Error stripping file: " + file.getAbsolutePath());
 							}
@@ -202,7 +206,7 @@ public class PDFTest {
 
 		Instant start = Instant.now();
 
-		String rootFolder = "C:/Users/rushdi.shams/eclipse/workspace/Scrawl/convert-text";
+		String rootFolder = "C:/Users/rushdi.shams/eclipse/workspace/Scrawl/convert-text/IQ30781/";
 		/*Create object*/
 		PDFTest fileConversion = new PDFTest(rootFolder);
 		/*Collect the list of files/foders in the root folder and send them to conversion method*/
